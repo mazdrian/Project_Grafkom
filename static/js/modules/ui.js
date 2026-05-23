@@ -3,7 +3,7 @@
 
 import { state } from './state.js';
 import { computeGrayscale, insideOutsideTest } from './api.js';
-import { mainCanvas, redrawAll } from './canvas.js';
+import { mainCanvas, redrawAll, clearOverlay } from './canvas.js';
 
 const TOOL_LABELS = {
   point  : 'Titik',
@@ -170,6 +170,15 @@ export function setupControls() {
   });
   document.getElementById('btnCancelPoly')?.addEventListener('click', () => {
     import('./tools.js').then(({ cancelPoly }) => cancelPoly());
+  });
+
+  // Reset view (pan -> 0,0)
+  document.getElementById('btnResetView')?.addEventListener('click', () => {
+    state.panX = 0;
+    state.panY = 0;
+    clearOverlay();
+    redrawAll();
+    showToast('View di-reset ke posisi awal', 'info');
   });
 }
 
