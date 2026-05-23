@@ -7,7 +7,7 @@ export const state = {
   algo: 'bresenham',
 
   // Atribut garis (PPT 06)
-  color: '#8b5cf6',
+  color: '#9ca3af',
   size: 2,
   opacity: 1.0,
   lineStyle: 'solid',
@@ -16,6 +16,7 @@ export const state = {
   drawing: false,
   startX: 0,
   startY: 0,
+  freestylePoints: [],
 
   // Polygon
   polyPoints: [],
@@ -30,7 +31,7 @@ export const state = {
   // Grid helper
   showGrid: true,
   gridSize: 25,
-  gridColor: 'rgba(139,92,246,0.10)',
+  gridColor: 'rgba(156,163,175,0.12)',
 
   // Pan / viewport
   panX: 0,

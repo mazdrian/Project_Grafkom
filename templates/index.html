@@ -3,13 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GrafKom 2D — Editor Grafika Komputer</title>
+  <title>SinauGrafKom — Editor Grafika Komputer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Quicksand', 'DM Sans', sans-serif; background: #0f1117; }
+    body { font-family: 'Montserrat', sans-serif; background: #262626; color: #e5e7eb; }
+    h1, h2, h3, h4, h5, h6, .font-semibold, .menu-item, .dock-title { font-family: 'Poppins', sans-serif; }
+    .font-mono { font-family: 'Montserrat', sans-serif !important; }
+
+    .menu-bar {
+      background: #1b1b1b;
+      border-bottom: 1px solid #343434;
+      color: #d4d4d4;
+    }
+    .options-bar {
+      background: #232323;
+      border-bottom: 1px solid #333;
+      color: #cfcfcf;
+    }
+    .menu-item {
+      padding: 0.35rem 0.55rem;
+      border-radius: 0.35rem;
+      color: #d4d4d4;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font: inherit;
+    }
+    .menu-item:hover { background: #2f2f2f; color: #fff; }
+    .workspace-shell { background: #2b2b2b; }
+    .dock-title {
+      font-size: 10px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+    .doc-frame {
+      background: #1f1f1f;
+      border: 1px solid #3a3a3a;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+    }
 
     /* ── Canvas ── */
     .canvas-wrap { position: relative; background: #f9f8f5; border-radius: 12px; overflow: hidden; }
@@ -20,79 +56,94 @@
     .sidebar { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2d3748 transparent; }
 
     /* ── Tool buttons ── */
-    .tool-active  { background: linear-gradient(90deg,#8b5cf6,#06b6d4) !important; color: #071021 !important; border-color: transparent !important; }
+    .tool-active  { background: #e5e7eb !important; color: #0f1117 !important; border-color: transparent !important; }
     .tool-inactive { background: transparent; color: #94a3b8; }
-    .tool-inactive:hover { background: #1e293b; color: #e2e8f0; }
+    .tool-inactive:hover { background: #1f2937; color: #f3f4f6; }
 
     /* ── Tab ── */
-    .tab-active   { background: linear-gradient(90deg,#06b6d4,#8b5cf6); color: #071021; border-color: transparent; }
+    .tab-active   { background: #e5e7eb; color: #0f1117; border-color: transparent; }
     .tab-inactive { background: transparent; color: #64748b; border-color: transparent; }
-    .tab-inactive:hover { color: #94a3b8; background: #1e293b; }
+    .tab-inactive:hover { color: #e5e7eb; background: #1f2937; }
 
     /* ── Matrix cells ── */
     .matrix-cell {
       display: inline-flex; align-items: center; justify-content: center;
       width: 64px; height: 28px;
-      background: #1e293b; border: 1px solid #334155;
-      border-radius: 4px; font-family: 'DM Mono', monospace;
+      background: #1f2937; border: 1px solid #374151;
+      border-radius: 4px; font-family: 'Montserrat', sans-serif;
       font-size: 11px; color: #7dd3fc;
     }
 
     /* ── Section label ── */
     .sec-label {
       font-size: 9px; font-weight: 600; letter-spacing: .1em;
-      text-transform: uppercase; color: #475569; margin-bottom: 6px;
+      text-transform: uppercase; color: #9ca3af; margin-bottom: 6px;
     }
 
     /* ── Panel ── */
-    .panel { background: linear-gradient(135deg,#071029,#0b1220); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 6px 18px rgba(11,17,26,0.45); }
+    .panel { background: linear-gradient(135deg,#1f1f1f,#242424); border: 1px solid #383838; border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
 
     /* ── Color swatch ── */
     .color-preview { width: 28px; height: 28px; border-radius: 6px; border: 2px solid #334155; flex-shrink: 0; }
 
     /* Range input ── */
-    input[type=range] { accent-color: #3b82f6; }
+    input[type=range] { accent-color: #d1d5db; }
     input[type=color] { width: 36px; height: 28px; border: none; background: none; cursor: pointer; padding: 0; }
 
     /* Select / dropdown styling to match dark theme and ensure contrast */
-    select, select option { background: #0f1724; color: #e6eef8; }
-    select { border: 1px solid #334155; }
-    select:focus { outline: 2px solid #1d4ed8; box-shadow: 0 0 0 4px rgba(59,130,246,0.12); }
-    select option { background: #0f1724; color: #e6eef8; }
-    select option[disabled] { color: #94a3b8; }
+    select, select option { background: #1d1d1d; color: #e5e7eb; }
+    select { border: 1px solid #444; }
+    select:focus { outline: 2px solid #9ca3af; box-shadow: 0 0 0 4px rgba(156,163,175,0.12); }
+    select option { background: #1d1d1d; color: #e5e7eb; }
+    select option[disabled] { color: #9ca3af; }
     select::-ms-expand { display: none; }
-    .custom-select { appearance: none; -webkit-appearance: none; padding-right: 2.2rem; background-image: linear-gradient(45deg, transparent 50%, #e6eef8 50%), linear-gradient(135deg, #e6eef8 50%, transparent 50%); background-position: calc(100% - 1.1rem) calc(50% - 0.1rem), calc(100% - .7rem) calc(50% - 0.1rem); background-size: .35rem .35rem, .35rem .35rem; background-repeat: no-repeat; }
+    .custom-select { appearance: none; -webkit-appearance: none; padding-right: 2.2rem; background-image: linear-gradient(45deg, transparent 50%, #e5e7eb 50%), linear-gradient(135deg, #e5e7eb 50%, transparent 50%); background-position: calc(100% - 1.1rem) calc(50% - 0.1rem), calc(100% - .7rem) calc(50% - 0.1rem); background-size: .35rem .35rem, .35rem .35rem; background-repeat: no-repeat; }
   </style>
 </head>
 
 <body class="flex flex-col h-screen text-slate-200 overflow-hidden">
 
   <!-- ══ TOPBAR ══════════════════════════════════════════════════ -->
-  <header class="flex items-center justify-between px-4 py-2 bg-[#0d1117] border-b border-slate-800 shrink-0">
+  <header class="menu-bar flex items-center justify-between px-4 py-2 shrink-0">
     <div class="flex items-center gap-3">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style="background: linear-gradient(90deg,#8b5cf6,#06b6d4);">G</div>
-      <span class="font-semibold text-sm tracking-tight">GrafKom 2D</span>
-      <span class="text-xs text-slate-500 font-mono">Editor Grafika Komputer</span>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold bg-slate-200 text-slate-900">S</div>
+      <div>
+        <span class="font-semibold text-sm tracking-tight block">SinauGrafKom</span>
+        <span class="text-[11px] text-slate-500 font-mono">sinau bareng grafkom gokil</span>
+      </div>
     </div>
-    <div class="flex items-center gap-2 text-xs text-slate-500 font-mono">
-      <span id="infoObjects">Objek: 0</span>
-      <span class="text-slate-700">·</span>
-      <span id="infoPoints">Titik: 0</span>
-      <span class="text-slate-700">·</span>
-      <span id="infoAlgoInfo"></span>
+    <div class="flex items-center gap-1 text-xs text-slate-400">
+      <button data-action="freestyle" class="menu-item">Freestyle <span class="text-slate-600 ml-1 font-mono">F</span></button>
+      <button data-action="new" class="menu-item">New <span class="text-slate-600 ml-1 font-mono">Ctrl+N</span></button>
+      <button data-action="export" class="menu-item">Export <span class="text-slate-600 ml-1 font-mono">Ctrl+E</span></button>
+      <button data-action="reset-view" class="menu-item">Reset View <span class="text-slate-600 ml-1 font-mono">Home</span></button>
+      <button data-action="toggle-grid" class="menu-item">Grid <span class="text-slate-600 ml-1 font-mono">G</span></button>
+      <button data-action="help" class="menu-item">Shortcuts <span class="text-slate-600 ml-1 font-mono">?</span></button>
     </div>
     <div class="flex gap-2">
-      <button id="btnClear" class="px-3 py-1.5 rounded-lg text-xs border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-700 transition-colors">Bersihkan</button>
-      <button id="btnExport" class="px-3 py-1.5 rounded-lg text-xs bg-blue-600 hover:bg-blue-500 text-white transition-colors">Export PNG</button>
+      <button id="btnClear" class="px-3 py-1.5 rounded-lg text-xs border border-slate-700 text-slate-400 hover:text-slate-100 hover:border-slate-500 transition-colors">Bersihkan</button>
+      <button id="btnExport" class="px-3 py-1.5 rounded-lg text-xs bg-slate-200 hover:bg-slate-100 text-slate-900 transition-colors">Export PNG</button>
       <button id="btnResetView" title="Reset view / center canvas" class="px-3 py-1.5 rounded-lg text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">Reset View</button>
     </div>
   </header>
 
+  <div class="options-bar flex items-center justify-between px-4 py-2 shrink-0 text-xs">
+    <div class="flex items-center gap-4">
+      <span class="font-semibold text-slate-200">Options</span>
+      <span class="text-slate-500" id="infoAlgoInfo"></span>
+    </div>
+    <div class="flex items-center gap-4 text-slate-500 font-mono">
+      <span id="infoObjects">Objek: 0</span>
+      <span id="infoPoints">Titik: 0</span>
+    </div>
+  </div>
+
   <!-- ══ MAIN LAYOUT ═════════════════════════════════════════════ -->
-  <div class="flex flex-1 overflow-hidden">
+  <div class="workspace-shell flex flex-1 overflow-hidden">
 
     <!-- ── LEFT SIDEBAR ──────────────────────────────────────── -->
-    <aside class="sidebar w-56 shrink-0 bg-[#0d1117] border-r border-slate-800 flex flex-col gap-0 p-2">
+    <aside class="sidebar w-60 shrink-0 bg-[#151515] border-r border-[#333] flex flex-col gap-0 p-2">
+      <div class="dock-title">Tools</div>
 
       <!-- PPT 03 — Output Primitif: Garis -->
       <div class="panel">
@@ -109,10 +160,10 @@
         <div id="algo-panel" class="mt-3 pl-1">
           <p class="sec-label">Algoritma</p>
           <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
-            <input type="radio" name="algo" value="bresenham" checked class="accent-blue-500"> Bresenham
+            <input type="radio" name="algo" value="bresenham" checked class="accent-slate-400"> Bresenham
           </label>
           <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-            <input type="radio" name="algo" value="dda" class="accent-blue-500"> DDA
+            <input type="radio" name="algo" value="dda" class="accent-slate-400"> DDA
           </label>
         </div>
       </div>
@@ -145,7 +196,7 @@
         <div id="polyControls" class="hidden mt-2 flex-col gap-1">
           <p class="text-xs text-slate-500 font-mono" id="polyCount">0 titik</p>
           <div class="flex gap-1">
-            <button id="btnClosePoly"  class="flex-1 py-1 text-xs rounded bg-green-700 hover:bg-green-600 text-white transition-colors">Enter ✓</button>
+            <button id="btnClosePoly"  class="flex-1 py-1 text-xs rounded bg-slate-300 hover:bg-slate-200 text-slate-900 transition-colors">Enter ✓</button>
             <button id="btnCancelPoly" class="flex-1 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">Esc ✕</button>
           </div>
         </div>
@@ -156,20 +207,25 @@
         <div id="statusTool">Tool: Titik</div>
         <div id="statusCoord">x: —  y: —</div>
         <div>Algo: <span id="statusAlgo">—</span></div>
-        <div class="text-blue-400 text-[10px]" id="hint">Klik pada kanvas untuk menempatkan titik</div>
+        <div class="text-slate-400 text-[10px]" id="hint">Klik pada kanvas untuk menempatkan titik</div>
       </div>
     </aside>
 
     <!-- ── CANVAS ─────────────────────────────────────────────── -->
-    <main class="flex-1 flex items-center justify-center p-3 bg-[#0f1117]">
-      <div class="canvas-wrap w-full h-full">
+    <main class="flex-1 flex flex-col min-w-0 p-3 bg-[#2b2b2b] overflow-auto">
+      <div class="mb-2 flex items-center justify-between text-xs text-slate-400 px-1">
+        <div class="font-semibold text-slate-200">Untitled-1</div>
+        <div class="font-mono">Zoom: 100% · Drag canvas with middle mouse</div>
+      </div>
+      <div class="doc-frame canvas-wrap w-full h-full min-h-[600px] rounded-none">
         <canvas id="mainCanvas"></canvas>
         <canvas id="overlayCanvas"></canvas>
       </div>
     </main>
 
     <!-- ── RIGHT SIDEBAR ─────────────────────────────────────── -->
-    <aside class="sidebar w-64 shrink-0 bg-[#0d1117] border-l border-slate-800 p-2 flex flex-col gap-0">
+    <aside class="sidebar w-72 shrink-0 bg-[#151515] border-l border-[#333] p-2 flex flex-col gap-0">
+      <div class="dock-title">Properties</div>
 
       <!-- PPT 06 — Atribut Output Primitif -->
       <div class="panel">
@@ -179,12 +235,12 @@
         <div class="mb-3">
           <p class="text-xs text-slate-400 mb-1">Warna</p>
           <div class="flex items-center gap-2">
-            <input type="color" id="colorPicker" value="#8b5cf6">
-            <span class="text-xs font-mono text-slate-300" id="colorHex">#8B5CF6</span>
+            <input type="color" id="colorPicker" value="#9ca3af">
+            <span class="text-xs font-mono text-slate-300" id="colorHex">#9CA3AF</span>
           </div>
           <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
             <label class="flex items-center gap-2">
-              <input type="checkbox" id="gridToggle" class="accent-blue-400">
+              <input type="checkbox" id="gridToggle" class="accent-slate-400">
               <span>Tampilkan grid</span>
             </label>
             <label class="ml-auto flex items-center gap-2">
@@ -226,7 +282,7 @@
       <div class="panel">
         <p class="sec-label">PPT 06 — Grayscale</p>
         <div class="flex items-center gap-2 mb-2">
-          <input type="color" id="gsColor" value="#3b82f6">
+          <input type="color" id="gsColor" value="#9ca3af">
           <span class="text-xs text-slate-400">Warna input</span>
         </div>
         <button id="btnGrayscale" class="w-full py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors mb-2">Hitung Grayscale</button>
@@ -257,11 +313,11 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs text-slate-500">tx</label>
-              <input id="tx" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="tx" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
             <div>
               <label class="text-xs text-slate-500">ty</label>
-              <input id="ty" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="ty" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
           </div>
         </div>
@@ -270,7 +326,7 @@
         <div id="tab-rotate" data-tab-content class="hidden space-y-2">
           <div>
             <label class="text-xs text-slate-500">Sudut (derajat)</label>
-            <input id="angle" type="number" value="45" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            <input id="angle" type="number" value="45" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
           </div>
           <p class="text-xs text-slate-600">Pivot: center bounding box</p>
         </div>
@@ -280,11 +336,11 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs text-slate-500">sx</label>
-              <input id="sx" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="sx" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
             <div>
               <label class="text-xs text-slate-500">sy</label>
-              <input id="sy" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="sy" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
           </div>
         </div>
@@ -294,19 +350,19 @@
           <p class="text-xs text-slate-500 mb-1">Sumbu Refleksi</p>
           <div class="grid grid-cols-2 gap-1">
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="reflectAxis" value="x" checked class="accent-blue-500"> Sumbu X
+              <input type="radio" name="reflectAxis" value="x" checked class="accent-slate-400"> Sumbu X
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="reflectAxis" value="y" class="accent-blue-500"> Sumbu Y
+              <input type="radio" name="reflectAxis" value="y" class="accent-slate-400"> Sumbu Y
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="reflectAxis" value="xy" class="accent-blue-500"> y = x
+              <input type="radio" name="reflectAxis" value="xy" class="accent-slate-400"> y = x
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="reflectAxis" value="neg_xy" class="accent-blue-500"> y = -x
+              <input type="radio" name="reflectAxis" value="neg_xy" class="accent-slate-400"> y = -x
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer col-span-2">
-              <input type="radio" name="reflectAxis" value="origin" class="accent-blue-500"> Titik Origin
+              <input type="radio" name="reflectAxis" value="origin" class="accent-slate-400"> Titik Origin
             </label>
           </div>
         </div>
@@ -315,20 +371,20 @@
         <div id="tab-shear" data-tab-content class="hidden space-y-2">
           <div class="flex gap-3 mb-1">
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="shearType" value="x" checked class="accent-blue-500"> Shear X
+              <input type="radio" name="shearType" value="x" checked class="accent-slate-400"> Shear X
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-              <input type="radio" name="shearType" value="y" class="accent-blue-500"> Shear Y
+              <input type="radio" name="shearType" value="y" class="accent-slate-400"> Shear Y
             </label>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs text-slate-500">shx</label>
-              <input id="shx" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="shx" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
             <div>
               <label class="text-xs text-slate-500">shy</label>
-              <input id="shy" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+              <input id="shy" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500">
             </div>
           </div>
         </div>
@@ -337,15 +393,15 @@
         <div id="tab-composite" data-tab-content class="hidden space-y-2">
           <div class="space-y-2">
             <label class="flex items-center gap-2 text-xs text-slate-400">
-              <input type="checkbox" id="comp_translate" checked class="accent-blue-500">
+              <input type="checkbox" id="comp_translate" checked class="accent-slate-400">
               Translasi — <input id="comp_tx" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none"> <input id="comp_ty" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">
             </label>
             <label class="flex items-center gap-2 text-xs text-slate-400">
-              <input type="checkbox" id="comp_rotate" class="accent-blue-500">
+              <input type="checkbox" id="comp_rotate" class="accent-slate-400">
               Rotasi — <input id="comp_angle" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">°
             </label>
             <label class="flex items-center gap-2 text-xs text-slate-400">
-              <input type="checkbox" id="comp_scale" class="accent-blue-500">
+              <input type="checkbox" id="comp_scale" class="accent-slate-400">
               Skala — <input id="comp_sx" type="number" value="1.2" step="0.1" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none"> <input id="comp_sy" type="number" value="1.2" step="0.1" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">
             </label>
           </div>
@@ -353,8 +409,8 @@
 
         <!-- Apply & Undo -->
         <div class="flex gap-2 mt-3">
-          <button id="btnTransform" class="flex-1 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white transition-colors">Terapkan</button>
-          <button id="btnUndoTransform" class="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-white hover:border-slate-500 transition-colors">Undo</button>
+          <button id="btnTransform" class="flex-1 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-100 text-xs text-slate-900 transition-colors">Terapkan</button>
+          <button id="btnUndoTransform" class="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-100 hover:border-slate-500 transition-colors">Undo</button>
         </div>
 
         <!-- Matrix display (PPT 08) -->
@@ -368,8 +424,8 @@
       <div class="panel">
         <p class="sec-label">PPT 05 — Inside-Outside Test</p>
         <p class="text-xs text-slate-500 mb-1">Titik uji (x,y dipisah ;)</p>
-        <input id="ioTestPoints" type="text" placeholder="100,150;300,200" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500 mb-2">
-        <button id="btnIOTest" class="w-full py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors mb-2">Tes Even-Odd</button>
+        <input id="ioTestPoints" type="text" placeholder="100,150;300,200" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-slate-500 mb-2">
+        <button id="btnIOTest" class="w-full py-1.5 rounded-lg bg-slate-200 hover:bg-slate-100 text-xs text-slate-900 transition-colors mb-2">Tes Even-Odd</button>
         <div id="ioTestResult" class="text-xs font-mono space-y-0.5 text-slate-400"></div>
       </div>
 

@@ -8,6 +8,7 @@ import { mainCanvas, redrawAll, clearOverlay } from './canvas.js';
 const TOOL_LABELS = {
   point  : 'Titik',
   line   : 'Garis',
+  freestyle: 'Freestyle',
   circle : 'Lingkaran',
   ellipse: 'Elips',
   polygon: 'Polygon Fill',
@@ -17,6 +18,7 @@ const TOOL_LABELS = {
 const HINTS = {
   point  : 'Klik pada kanvas untuk menempatkan titik',
   line   : 'Klik dan drag untuk menggambar garis',
+  freestyle: 'Klik dan drag bebas seperti whiteboard',
   circle : 'Klik pusat, drag ke tepi untuk menggambar lingkaran',
   ellipse: 'Klik pusat, drag untuk menentukan rx dan ry elips',
   polygon: 'Klik titik-titik polygon — Enter untuk menutup, Esc untuk batal',
@@ -49,10 +51,10 @@ function setText(id, val) {
 // ── Toast notification ─────────────────────────────────────────
 export function showToast(msg, type = 'info') {
   const colors = {
-    info   : 'bg-blue-50 text-blue-700 border-blue-200',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200',
-    success: 'bg-green-50 text-green-700 border-green-200',
-    error  : 'bg-red-50 text-red-700 border-red-200',
+    info   : 'bg-slate-900 text-slate-200 border-slate-700',
+    warning: 'bg-slate-900 text-slate-200 border-slate-700',
+    success: 'bg-slate-900 text-slate-200 border-slate-700',
+    error  : 'bg-slate-900 text-slate-200 border-slate-700',
   };
   const toast = document.createElement('div');
   toast.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl border text-sm font-medium shadow-lg transition-all duration-300 ${colors[type] || colors.info}`;
@@ -113,14 +115,7 @@ export function setupToolButtons() {
     btn.addEventListener('click', () => {
       // Import cancelPoly secara lazy untuk hindari circular dep
       import('./tools.js').then(({ cancelPoly }) => cancelPoly());
-      state.tool = btn.dataset.tool;
-      document.querySelectorAll('[data-tool]').forEach(b => {
-        b.classList.remove('tool-active');
-        b.classList.add('tool-inactive');
-      });
-      btn.classList.remove('tool-inactive');
-      btn.classList.add('tool-active');
-      updateUI();
+      setActiveTool(btn.dataset.tool);
     });
   });
 
@@ -132,37 +127,8 @@ export function setupToolButtons() {
 
 // ── Setup clear & export ───────────────────────────────────────
 export function setupControls() {
-  document.getElementById('btnClear')?.addEventListener('click', () => {
-    state.objects = [];
-    state.transformHistory = [];
-    state.polyPoints = [];
-    state.totalPoints = 0;
-    if (mainCanvas) {
-      const ctx = mainCanvas.getContext('2d');
-      ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
-    }
-    import('./canvas.js').then(({ clearOverlay }) => clearOverlay());
-    import('./transform.js').then(({ hideMatrix }) => hideMatrix());
-    document.getElementById('polyControls')?.style.setProperty('display', 'none');
-    updateUI();
-    setAlgoInfo('');
-    showToast('Kanvas dibersihkan', 'info');
-  });
-
-  document.getElementById('btnExport')?.addEventListener('click', () => {
-    const tmp = document.createElement('canvas');
-    tmp.width  = mainCanvas.width;
-    tmp.height = mainCanvas.height;
-    const tctx = tmp.getContext('2d');
-    tctx.fillStyle = '#f8f7f4';
-    tctx.fillRect(0, 0, tmp.width, tmp.height);
-    tctx.drawImage(mainCanvas, 0, 0);
-    const a = document.createElement('a');
-    a.download = `grafkom_${Date.now()}.png`;
-    a.href = tmp.toDataURL('image/png');
-    a.click();
-    showToast('Gambar diekspor!', 'success');
-  });
+  bindActionButtons();
+  document.addEventListener('keydown', handleGlobalShortcuts);
 
   // Polygon controls
   document.getElementById('btnClosePoly')?.addEventListener('click', () => {
@@ -172,14 +138,151 @@ export function setupControls() {
     import('./tools.js').then(({ cancelPoly }) => cancelPoly());
   });
 
-  // Reset view (pan -> 0,0)
-  document.getElementById('btnResetView')?.addEventListener('click', () => {
-    state.panX = 0;
-    state.panY = 0;
-    clearOverlay();
-    redrawAll();
-    showToast('View di-reset ke posisi awal', 'info');
+}
+
+function bindActionButtons() {
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      runAction(action);
+    });
   });
+
+  document.getElementById('btnClear')?.addEventListener('click', () => runAction('new'));
+  document.getElementById('btnExport')?.addEventListener('click', () => runAction('export'));
+  document.getElementById('btnResetView')?.addEventListener('click', () => runAction('reset-view'));
+}
+
+function runAction(action) {
+  switch (action) {
+    case 'new':
+      clearWorkspace();
+      break;
+    case 'export':
+      exportWorkspace();
+      break;
+    case 'reset-view':
+      resetWorkspaceView();
+      break;
+    case 'toggle-grid':
+      toggleGrid();
+      break;
+    case 'help':
+      showShortcutHelp();
+      break;
+    case 'freestyle':
+      setActiveTool('freestyle');
+      showToast('Mode Freestyle aktif', 'info');
+      break;
+    default:
+      break;
+  }
+}
+
+function setActiveTool(tool) {
+  state.tool = tool;
+  document.querySelectorAll('[data-tool]').forEach(b => {
+    b.classList.remove('tool-active');
+    b.classList.add('tool-inactive');
+  });
+  document.querySelectorAll('[data-action]').forEach(b => {
+    if (b.dataset.action === 'freestyle') {
+      b.classList.remove('tool-active');
+      b.classList.add('tool-inactive');
+    }
+  });
+  const freestyleBtn = document.querySelector('[data-action="freestyle"]');
+  if (tool === 'freestyle' && freestyleBtn) {
+    freestyleBtn.classList.remove('tool-inactive');
+    freestyleBtn.classList.add('tool-active');
+  }
+  updateUI();
+}
+
+function clearWorkspace() {
+  state.objects = [];
+  state.transformHistory = [];
+  state.polyPoints = [];
+  state.freestylePoints = [];
+  state.totalPoints = 0;
+  if (mainCanvas) {
+    const ctx = mainCanvas.getContext('2d');
+    ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+  }
+  import('./canvas.js').then(({ clearOverlay }) => clearOverlay());
+  import('./transform.js').then(({ hideMatrix }) => hideMatrix());
+  document.getElementById('polyControls')?.style.setProperty('display', 'none');
+  updateUI();
+  setAlgoInfo('');
+  showToast('Workspace baru dibuat', 'info');
+}
+
+function exportWorkspace() {
+  const tmp = document.createElement('canvas');
+  tmp.width  = mainCanvas.width;
+  tmp.height = mainCanvas.height;
+  const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#f8f7f4';
+  tctx.fillRect(0, 0, tmp.width, tmp.height);
+  tctx.drawImage(mainCanvas, 0, 0);
+  const a = document.createElement('a');
+  a.download = `grafkom_${Date.now()}.png`;
+  a.href = tmp.toDataURL('image/png');
+  a.click();
+  showToast('Gambar diekspor!', 'success');
+}
+
+function resetWorkspaceView() {
+  state.panX = 0;
+  state.panY = 0;
+  clearOverlay();
+  redrawAll();
+  showToast('View di-reset ke posisi awal', 'info');
+}
+
+function toggleGrid() {
+  state.showGrid = !state.showGrid;
+  const gridToggle = document.getElementById('gridToggle');
+  if (gridToggle) gridToggle.checked = state.showGrid;
+  redrawAll();
+  showToast(state.showGrid ? 'Grid ditampilkan' : 'Grid disembunyikan', 'info');
+}
+
+function showShortcutHelp() {
+  showToast('Shortcuts: F Freestyle, Ctrl+N New, Ctrl+E Export, Home Reset View, G Grid', 'info');
+}
+
+function handleGlobalShortcuts(e) {
+  const target = e.target;
+  const isTyping = target && (
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.tagName === 'SELECT' ||
+    target.isContentEditable
+  );
+
+  if (isTyping) return;
+
+  const key = e.key.toLowerCase();
+  if (e.ctrlKey && key === 'n') {
+    e.preventDefault();
+    runAction('new');
+  } else if (e.ctrlKey && key === 'e') {
+    e.preventDefault();
+    runAction('export');
+  } else if (key === 'home') {
+    e.preventDefault();
+    runAction('reset-view');
+  } else if (!e.ctrlKey && !e.metaKey && !e.altKey && key === 'f') {
+    e.preventDefault();
+    runAction('freestyle');
+  } else if (!e.ctrlKey && !e.metaKey && !e.altKey && key === 'g') {
+    e.preventDefault();
+    runAction('toggle-grid');
+  } else if ((e.shiftKey && key === '/') || key === '?') {
+    e.preventDefault();
+    runAction('help');
+  }
 }
 
 // ── Setup grayscale (PPT 06) ───────────────────────────────────
@@ -237,7 +340,7 @@ export function setupInsideOutsideTest() {
     const out = document.getElementById('ioTestResult');
     if (out) {
       out.innerHTML = results.map(r =>
-        `<span class="${r.inside ? 'text-green-600' : 'text-red-500'}">
+        `<span class="${r.inside ? 'text-slate-200' : 'text-slate-400'}">
           (${r.x}, ${r.y}) → ${r.inside ? '✓ Dalam' : '✗ Luar'}
         </span>`
       ).join('<br>');

@@ -5,7 +5,7 @@ import { state } from './state.js';
 import {
   drawPoints, commitObject,
   clearOverlay, previewLine, previewCircle,
-  previewEllipse, previewPolygon, getXY,
+  previewEllipse, previewPolygon, previewFreestyle, getXY,
   mainCanvas, overlayCanvas, redrawAll,
 } from './canvas.js';
 import {
@@ -17,6 +17,40 @@ import { updateUI, setAlgoInfo, showToast } from './ui.js';
 // ── Titik ─────────────────────────────────────────────────────
 export function doPoint(x, y) {
   commitObject('point', [[x, y]]);
+  updateUI();
+}
+
+// ── Freestyle / whiteboard ────────────────────────────────────
+export function startFreestyle(x, y) {
+  state.freestylePoints = [[x, y]];
+  previewFreestyle(state.freestylePoints);
+}
+
+export function addFreestylePoint(x, y) {
+  const points = state.freestylePoints;
+  const last = points[points.length - 1];
+  if (!last) {
+    points.push([x, y]);
+    previewFreestyle(points);
+    return;
+  }
+  const dx = x - last[0];
+  const dy = y - last[1];
+  if (Math.hypot(dx, dy) < 2) return;
+  points.push([x, y]);
+  previewFreestyle(points);
+}
+
+export function finishFreestyle() {
+  if (!state.freestylePoints || state.freestylePoints.length < 2) {
+    state.freestylePoints = [];
+    clearOverlay();
+    return;
+  }
+  commitObject('freestyle', state.freestylePoints);
+  setAlgoInfo(`Freestyle — ${state.freestylePoints.length} titik`);
+  state.freestylePoints = [];
+  clearOverlay();
   updateUI();
 }
 
@@ -150,7 +184,9 @@ function onMouseMove(e) {
   if (coord) coord.textContent = `x: ${x}  y: ${y}`;
 
   if (!state.drawing) return;
-  if (state.tool === 'line') {
+  if (state.tool === 'freestyle') {
+    addFreestylePoint(x, y);
+  } else if (state.tool === 'line') {
     previewLine(state.startX, state.startY, x, y);
   } else if (state.tool === 'circle') {
     const r = Math.round(Math.hypot(x - state.startX, y - state.startY));
@@ -171,6 +207,10 @@ async function onMouseDown(e) {
   state.drawing = true;
   state.startX  = x;
   state.startY  = y;
+  if (state.tool === 'freestyle') {
+    startFreestyle(x, y);
+    return;
+  }
   if (state.tool === 'point') doPoint(x, y);
 }
 
@@ -183,7 +223,10 @@ async function onMouseUp(e) {
   clearOverlay();
   const [x, y] = getXY(e);
 
-  if (state.tool === 'line') {
+  if (state.tool === 'freestyle') {
+    addFreestylePoint(x, y);
+    finishFreestyle();
+  } else if (state.tool === 'line') {
     await doLine(state.startX, state.startY, x, y);
   } else if (state.tool === 'circle') {
     const r = Math.round(Math.hypot(x - state.startX, y - state.startY));

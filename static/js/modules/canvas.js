@@ -64,6 +64,18 @@ export function drawPoints(ctx, points, color, size, opacity, lineStyle) {
   resetCtx(ctx);
 }
 
+export function drawPolyline(ctx, points, color, size, opacity, lineStyle) {
+  if (!points || points.length < 2) return;
+  applyStyle(ctx, color, size, opacity, lineStyle);
+  ctx.beginPath();
+  points.forEach(([x, y], index) => {
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  resetCtx(ctx);
+}
+
 // ── Gambar ulang semua objek ───────────────────────────────────
 export function redrawAll() {
   if (!mctx) return;
@@ -75,7 +87,11 @@ export function redrawAll() {
   // draw grid under objects
   if (state.showGrid) drawGrid(mctx, state.gridSize, state.gridColor);
   state.objects.forEach(obj => {
-    drawPoints(mctx, obj.points, obj.color, obj.size, obj.opacity, obj.lineStyle);
+    if (obj.type === 'freestyle') {
+      drawPolyline(mctx, obj.points, obj.color, obj.size, obj.opacity, obj.lineStyle);
+    } else {
+      drawPoints(mctx, obj.points, obj.color, obj.size, obj.opacity, obj.lineStyle);
+    }
   });
   mctx.restore();
 }
@@ -186,6 +202,15 @@ export function previewPolygon(points) {
   });
   octx.restore();
   resetCtx(octx);
+}
+
+export function previewFreestyle(points) {
+  clearOverlay();
+  if (!points || points.length === 0) return;
+  octx.save();
+  octx.translate(state.panX, state.panY);
+  drawPolyline(octx, points, state.color, state.size, state.opacity, state.lineStyle);
+  octx.restore();
 }
 
 // ── Koordinat dari event mouse ────────────────────────────────
