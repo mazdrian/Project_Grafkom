@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GrafKom 2D — Editor Grafika Komputer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: #0f1117; }
+
+    /* ── Canvas ── */
+    .canvas-wrap { position: relative; background: #f9f8f5; border-radius: 12px; overflow: hidden; }
+    #mainCanvas, #overlayCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #overlayCanvas { cursor: crosshair; }
+
+    /* ── Sidebar scroll ── */
+    .sidebar { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2d3748 transparent; }
+
+    /* ── Tool buttons ── */
+    .tool-active  { background: #3b82f6 !important; color: #fff !important; border-color: #3b82f6 !important; }
+    .tool-inactive { background: transparent; color: #94a3b8; }
+    .tool-inactive:hover { background: #1e293b; color: #e2e8f0; }
+
+    /* ── Tab ── */
+    .tab-active   { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+    .tab-inactive { background: transparent; color: #64748b; border-color: transparent; }
+    .tab-inactive:hover { color: #94a3b8; background: #1e293b; }
+
+    /* ── Matrix cells ── */
+    .matrix-cell {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 64px; height: 28px;
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 4px; font-family: 'DM Mono', monospace;
+      font-size: 11px; color: #7dd3fc;
+    }
+
+    /* ── Section label ── */
+    .sec-label {
+      font-size: 9px; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: #475569; margin-bottom: 6px;
+    }
+
+    /* ── Panel ── */
+    .panel { background: #161b27; border: 1px solid #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+
+    /* ── Color swatch ── */
+    .color-preview { width: 28px; height: 28px; border-radius: 6px; border: 2px solid #334155; flex-shrink: 0; }
+
+    /* Range input ── */
+    input[type=range] { accent-color: #3b82f6; }
+    input[type=color] { width: 36px; height: 28px; border: none; background: none; cursor: pointer; padding: 0; }
+  </style>
+</head>
+
+<body class="flex flex-col h-screen text-slate-200 overflow-hidden">
+
+  <!-- ══ TOPBAR ══════════════════════════════════════════════════ -->
+  <header class="flex items-center justify-between px-4 py-2 bg-[#0d1117] border-b border-slate-800 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-bold">G</div>
+      <span class="font-semibold text-sm tracking-tight">GrafKom 2D</span>
+      <span class="text-xs text-slate-500 font-mono">Editor Grafika Komputer</span>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-slate-500 font-mono">
+      <span id="infoObjects">Objek: 0</span>
+      <span class="text-slate-700">·</span>
+      <span id="infoPoints">Titik: 0</span>
+      <span class="text-slate-700">·</span>
+      <span id="infoAlgoInfo"></span>
+    </div>
+    <div class="flex gap-2">
+      <button id="btnClear" class="px-3 py-1.5 rounded-lg text-xs border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-700 transition-colors">Bersihkan</button>
+      <button id="btnExport" class="px-3 py-1.5 rounded-lg text-xs bg-blue-600 hover:bg-blue-500 text-white transition-colors">Export PNG</button>
+    </div>
+  </header>
+
+  <!-- ══ MAIN LAYOUT ═════════════════════════════════════════════ -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ── LEFT SIDEBAR ──────────────────────────────────────── -->
+    <aside class="sidebar w-56 shrink-0 bg-[#0d1117] border-r border-slate-800 flex flex-col gap-0 p-2">
+
+      <!-- PPT 03 — Output Primitif: Garis -->
+      <div class="panel">
+        <p class="sec-label">PPT 03 — Garis</p>
+        <div class="flex flex-col gap-1">
+          <button data-tool="point"   class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <span class="w-3 h-3 rounded-full bg-current opacity-70"></span> Titik
+          </button>
+          <button data-tool="line"    class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <span class="w-4 h-0.5 bg-current opacity-70 rotate-[-30deg]"></span> Garis
+          </button>
+        </div>
+        <!-- Pilihan algoritma -->
+        <div id="algo-panel" class="mt-3 pl-1">
+          <p class="sec-label">Algoritma</p>
+          <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer mb-1">
+            <input type="radio" name="algo" value="bresenham" checked class="accent-blue-500"> Bresenham
+          </label>
+          <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+            <input type="radio" name="algo" value="dda" class="accent-blue-500"> DDA
+          </label>
+        </div>
+      </div>
+
+      <!-- PPT 04 — Lingkaran & Elips -->
+      <div class="panel">
+        <p class="sec-label">PPT 04 — Lingkaran & Elips</p>
+        <div class="flex flex-col gap-1">
+          <button data-tool="circle"  class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <svg class="w-3 h-3 opacity-70" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/></svg> Lingkaran
+          </button>
+          <button data-tool="ellipse" class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <svg class="w-3 h-3 opacity-70" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="6" cy="6" rx="5" ry="3"/></svg> Elips
+          </button>
+        </div>
+      </div>
+
+      <!-- PPT 05 — Fill Area -->
+      <div class="panel">
+        <p class="sec-label">PPT 05 — Fill Area</p>
+        <div class="flex flex-col gap-1">
+          <button data-tool="polygon" class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <svg class="w-3 h-3 opacity-70" viewBox="0 0 12 12" fill="currentColor" opacity=".5"><polygon points="6,1 11,9 1,9"/></svg> Scanline Fill
+          </button>
+          <button data-tool="flood"   class="tool-btn tool-inactive flex items-center gap-2 px-3 py-2 rounded-lg text-xs border border-transparent transition-all">
+            <svg class="w-3 h-3 opacity-70" viewBox="0 0 12 12" fill="currentColor" opacity=".5"><rect x="1" y="1" width="10" height="10" rx="2"/></svg> Flood Fill
+          </button>
+        </div>
+        <!-- Polygon controls -->
+        <div id="polyControls" class="hidden mt-2 flex-col gap-1">
+          <p class="text-xs text-slate-500 font-mono" id="polyCount">0 titik</p>
+          <div class="flex gap-1">
+            <button id="btnClosePoly"  class="flex-1 py-1 text-xs rounded bg-green-700 hover:bg-green-600 text-white transition-colors">Enter ✓</button>
+            <button id="btnCancelPoly" class="flex-1 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">Esc ✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="mt-auto panel text-xs text-slate-500 font-mono space-y-1">
+        <div id="statusTool">Tool: Titik</div>
+        <div id="statusCoord">x: —  y: —</div>
+        <div>Algo: <span id="statusAlgo">—</span></div>
+        <div class="text-blue-400 text-[10px]" id="hint">Klik pada kanvas untuk menempatkan titik</div>
+      </div>
+    </aside>
+
+    <!-- ── CANVAS ─────────────────────────────────────────────── -->
+    <main class="flex-1 flex items-center justify-center p-3 bg-[#0f1117]">
+      <div class="canvas-wrap w-full h-full">
+        <canvas id="mainCanvas"></canvas>
+        <canvas id="overlayCanvas"></canvas>
+      </div>
+    </main>
+
+    <!-- ── RIGHT SIDEBAR ─────────────────────────────────────── -->
+    <aside class="sidebar w-64 shrink-0 bg-[#0d1117] border-l border-slate-800 p-2 flex flex-col gap-0">
+
+      <!-- PPT 06 — Atribut Output Primitif -->
+      <div class="panel">
+        <p class="sec-label">PPT 06 — Atribut</p>
+
+        <!-- Warna -->
+        <div class="mb-3">
+          <p class="text-xs text-slate-400 mb-1">Warna</p>
+          <div class="flex items-center gap-2">
+            <input type="color" id="colorPicker" value="#1e3a5f">
+            <span class="text-xs font-mono text-slate-300" id="colorHex">#1E3A5F</span>
+          </div>
+        </div>
+
+        <!-- Tebal garis -->
+        <div class="mb-3">
+          <div class="flex justify-between text-xs text-slate-400 mb-1">
+            <span>Tebal Garis</span><span id="sizeVal">2px</span>
+          </div>
+          <input type="range" id="sizeSlider" min="1" max="12" value="2" class="w-full">
+        </div>
+
+        <!-- Opacity -->
+        <div class="mb-3">
+          <div class="flex justify-between text-xs text-slate-400 mb-1">
+            <span>Opacity</span><span id="opacityVal">100%</span>
+          </div>
+          <input type="range" id="opacitySlider" min="10" max="100" value="100" class="w-full">
+        </div>
+
+        <!-- Tipe garis (solid/dashed/dotted/dashdot) -->
+        <div>
+          <p class="text-xs text-slate-400 mb-1">Tipe Garis</p>
+          <select id="lineStyle" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 outline-none">
+            <option value="solid">─── Solid</option>
+            <option value="dashed">- - - Dashed</option>
+            <option value="dotted">··· Dotted</option>
+            <option value="dashdot">-·- Dash-Dot</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- PPT 06 — Grayscale -->
+      <div class="panel">
+        <p class="sec-label">PPT 06 — Grayscale</p>
+        <div class="flex items-center gap-2 mb-2">
+          <input type="color" id="gsColor" value="#3b82f6">
+          <span class="text-xs text-slate-400">Warna input</span>
+        </div>
+        <button id="btnGrayscale" class="w-full py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors mb-2">Hitung Grayscale</button>
+        <div class="flex gap-2 mb-2">
+          <div id="gsOriginal" class="flex-1 h-8 rounded-lg border border-slate-700"></div>
+          <div class="flex items-center text-slate-600 text-xs">→</div>
+          <div id="gsResult"   class="flex-1 h-8 rounded-lg border border-slate-700 bg-slate-800"></div>
+        </div>
+        <p class="text-xs font-mono text-slate-500 leading-relaxed" id="gsInfo">Formula: 0.299R + 0.587G + 0.114B</p>
+      </div>
+
+      <!-- PPT 07/08/09 — Transformasi -->
+      <div class="panel flex-1">
+        <p class="sec-label">PPT 07–09 — Transformasi</p>
+
+        <!-- Tabs -->
+        <div class="flex flex-wrap gap-1 mb-3">
+          <button data-tab="translate"  class="tab-btn tab-active  px-2 py-1 rounded text-xs border transition-all">Translasi</button>
+          <button data-tab="rotate"     class="tab-btn tab-inactive px-2 py-1 rounded text-xs border transition-all">Rotasi</button>
+          <button data-tab="scale"      class="tab-btn tab-inactive px-2 py-1 rounded text-xs border transition-all">Skala</button>
+          <button data-tab="reflect"    class="tab-btn tab-inactive px-2 py-1 rounded text-xs border transition-all">Refleksi</button>
+          <button data-tab="shear"      class="tab-btn tab-inactive px-2 py-1 rounded text-xs border transition-all">Shear</button>
+          <button data-tab="composite"  class="tab-btn tab-inactive px-2 py-1 rounded text-xs border transition-all">Komposit</button>
+        </div>
+
+        <!-- Tab: Translasi -->
+        <div id="tab-translate" data-tab-content class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-slate-500">tx</label>
+              <input id="tx" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">ty</label>
+              <input id="ty" type="number" value="50" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Rotasi -->
+        <div id="tab-rotate" data-tab-content class="hidden space-y-2">
+          <div>
+            <label class="text-xs text-slate-500">Sudut (derajat)</label>
+            <input id="angle" type="number" value="45" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+          </div>
+          <p class="text-xs text-slate-600">Pivot: center bounding box</p>
+        </div>
+
+        <!-- Tab: Skala -->
+        <div id="tab-scale" data-tab-content class="hidden space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-slate-500">sx</label>
+              <input id="sx" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">sy</label>
+              <input id="sy" type="number" value="1.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Refleksi (PPT 09) -->
+        <div id="tab-reflect" data-tab-content class="hidden space-y-2">
+          <p class="text-xs text-slate-500 mb-1">Sumbu Refleksi</p>
+          <div class="grid grid-cols-2 gap-1">
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="reflectAxis" value="x" checked class="accent-blue-500"> Sumbu X
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="reflectAxis" value="y" class="accent-blue-500"> Sumbu Y
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="reflectAxis" value="xy" class="accent-blue-500"> y = x
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="reflectAxis" value="neg_xy" class="accent-blue-500"> y = -x
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer col-span-2">
+              <input type="radio" name="reflectAxis" value="origin" class="accent-blue-500"> Titik Origin
+            </label>
+          </div>
+        </div>
+
+        <!-- Tab: Shear (PPT 09) -->
+        <div id="tab-shear" data-tab-content class="hidden space-y-2">
+          <div class="flex gap-3 mb-1">
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="shearType" value="x" checked class="accent-blue-500"> Shear X
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+              <input type="radio" name="shearType" value="y" class="accent-blue-500"> Shear Y
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-slate-500">shx</label>
+              <input id="shx" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">shy</label>
+              <input id="shy" type="number" value="0.5" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Komposit (PPT 08) -->
+        <div id="tab-composite" data-tab-content class="hidden space-y-2">
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-xs text-slate-400">
+              <input type="checkbox" id="comp_translate" checked class="accent-blue-500">
+              Translasi — <input id="comp_tx" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none"> <input id="comp_ty" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-400">
+              <input type="checkbox" id="comp_rotate" class="accent-blue-500">
+              Rotasi — <input id="comp_angle" type="number" value="30" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">°
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-400">
+              <input type="checkbox" id="comp_scale" class="accent-blue-500">
+              Skala — <input id="comp_sx" type="number" value="1.2" step="0.1" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none"> <input id="comp_sy" type="number" value="1.2" step="0.1" class="w-14 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-slate-200 outline-none">
+            </label>
+          </div>
+        </div>
+
+        <!-- Apply & Undo -->
+        <div class="flex gap-2 mt-3">
+          <button id="btnTransform" class="flex-1 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white transition-colors">Terapkan</button>
+          <button id="btnUndoTransform" class="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-white hover:border-slate-500 transition-colors">Undo</button>
+        </div>
+
+        <!-- Matrix display (PPT 08) -->
+        <div id="matrixBar" class="hidden mt-3 p-2 bg-slate-900 rounded-lg border border-slate-800">
+          <p class="text-xs text-slate-500 mb-1" id="matrixLabel">Matriks Transformasi</p>
+          <div id="matrixDisplay" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- PPT 05 — Inside-Outside Test -->
+      <div class="panel">
+        <p class="sec-label">PPT 05 — Inside-Outside Test</p>
+        <p class="text-xs text-slate-500 mb-1">Titik uji (x,y dipisah ;)</p>
+        <input id="ioTestPoints" type="text" placeholder="100,150;300,200" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-blue-500 mb-2">
+        <button id="btnIOTest" class="w-full py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors mb-2">Tes Even-Odd</button>
+        <div id="ioTestResult" class="text-xs font-mono space-y-0.5 text-slate-400"></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script type="module" src="/static/js/editor.js"></script>
+</body>
+</html>
