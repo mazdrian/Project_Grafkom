@@ -53,6 +53,15 @@
     /* Range input ── */
     input[type=range] { accent-color: #3b82f6; }
     input[type=color] { width: 36px; height: 28px; border: none; background: none; cursor: pointer; padding: 0; }
+
+    /* Select / dropdown styling to match dark theme and ensure contrast */
+    select, select option { background: #0f1724; color: #e6eef8; }
+    select { border: 1px solid #334155; }
+    select:focus { outline: 2px solid #1d4ed8; box-shadow: 0 0 0 4px rgba(59,130,246,0.12); }
+    select option { background: #0f1724; color: #e6eef8; }
+    select option[disabled] { color: #94a3b8; }
+    select::-ms-expand { display: none; }
+    .custom-select { appearance: none; -webkit-appearance: none; padding-right: 2.2rem; background-image: linear-gradient(45deg, transparent 50%, #e6eef8 50%), linear-gradient(135deg, #e6eef8 50%, transparent 50%); background-position: calc(100% - 1.1rem) calc(50% - 0.1rem), calc(100% - .7rem) calc(50% - 0.1rem); background-size: .35rem .35rem, .35rem .35rem; background-repeat: no-repeat; }
   </style>
 </head>
 
@@ -193,7 +202,7 @@
         <!-- Tipe garis (solid/dashed/dotted/dashdot) -->
         <div>
           <p class="text-xs text-slate-400 mb-1">Tipe Garis</p>
-          <select id="lineStyle" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 outline-none">
+          <select id="lineStyle" class="custom-select w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 outline-none">
             <option value="solid">─── Solid</option>
             <option value="dashed">- - - Dashed</option>
             <option value="dotted">··· Dotted</option>
