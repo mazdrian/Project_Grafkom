@@ -86,6 +86,25 @@ export function setupAttributes() {
   document.getElementById('lineStyle')?.addEventListener('change', e => {
     state.lineStyle = e.target.value;
   });
+
+  // Grid controls
+  const gridToggle = document.getElementById('gridToggle');
+  const gridSizeInput = document.getElementById('gridSizeInput');
+  if (gridToggle) {
+    gridToggle.checked = state.showGrid;
+    gridToggle.addEventListener('change', e => {
+      state.showGrid = e.target.checked;
+      redrawAll();
+    });
+  }
+  if (gridSizeInput) {
+    gridSizeInput.value = state.gridSize;
+    gridSizeInput.addEventListener('input', e => {
+      const v = parseInt(e.target.value) || 10;
+      state.gridSize = Math.max(8, Math.min(200, v));
+      redrawAll();
+    });
+  }
 }
 
 // ── Setup tool buttons ─────────────────────────────────────────

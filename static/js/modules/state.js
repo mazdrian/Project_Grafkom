@@ -7,7 +7,7 @@ export const state = {
   algo: 'bresenham',
 
   // Atribut garis (PPT 06)
-  color: '#1e3a5f',
+  color: '#8b5cf6',
   size: 2,
   opacity: 1.0,
   lineStyle: 'solid',
@@ -26,6 +26,18 @@ export const state = {
 
   // Info
   totalPoints: 0,
+
+  // Grid helper
+  showGrid: true,
+  gridSize: 25,
+  gridColor: 'rgba(139,92,246,0.10)',
+
+  // Pan / viewport
+  panX: 0,
+  panY: 0,
+  panning: false,
+  panStartMouse: [0, 0],
+  panStartOffset: [0, 0],
 
   // Tab transformasi aktif
   activeTransformTab: 'translate',

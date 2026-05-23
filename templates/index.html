@@ -6,10 +6,10 @@
   <title>GrafKom 2D — Editor Grafika Komputer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #0f1117; }
+    body { font-family: 'Quicksand', 'DM Sans', sans-serif; background: #0f1117; }
 
     /* ── Canvas ── */
     .canvas-wrap { position: relative; background: #f9f8f5; border-radius: 12px; overflow: hidden; }
@@ -20,12 +20,12 @@
     .sidebar { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2d3748 transparent; }
 
     /* ── Tool buttons ── */
-    .tool-active  { background: #3b82f6 !important; color: #fff !important; border-color: #3b82f6 !important; }
+    .tool-active  { background: linear-gradient(90deg,#8b5cf6,#06b6d4) !important; color: #071021 !important; border-color: transparent !important; }
     .tool-inactive { background: transparent; color: #94a3b8; }
     .tool-inactive:hover { background: #1e293b; color: #e2e8f0; }
 
     /* ── Tab ── */
-    .tab-active   { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+    .tab-active   { background: linear-gradient(90deg,#06b6d4,#8b5cf6); color: #071021; border-color: transparent; }
     .tab-inactive { background: transparent; color: #64748b; border-color: transparent; }
     .tab-inactive:hover { color: #94a3b8; background: #1e293b; }
 
@@ -45,7 +45,7 @@
     }
 
     /* ── Panel ── */
-    .panel { background: #161b27; border: 1px solid #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .panel { background: linear-gradient(135deg,#071029,#0b1220); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 6px 18px rgba(11,17,26,0.45); }
 
     /* ── Color swatch ── */
     .color-preview { width: 28px; height: 28px; border-radius: 6px; border: 2px solid #334155; flex-shrink: 0; }
@@ -70,7 +70,7 @@
   <!-- ══ TOPBAR ══════════════════════════════════════════════════ -->
   <header class="flex items-center justify-between px-4 py-2 bg-[#0d1117] border-b border-slate-800 shrink-0">
     <div class="flex items-center gap-3">
-      <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-bold">G</div>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style="background: linear-gradient(90deg,#8b5cf6,#06b6d4);">G</div>
       <span class="font-semibold text-sm tracking-tight">GrafKom 2D</span>
       <span class="text-xs text-slate-500 font-mono">Editor Grafika Komputer</span>
     </div>
@@ -178,8 +178,18 @@
         <div class="mb-3">
           <p class="text-xs text-slate-400 mb-1">Warna</p>
           <div class="flex items-center gap-2">
-            <input type="color" id="colorPicker" value="#1e3a5f">
-            <span class="text-xs font-mono text-slate-300" id="colorHex">#1E3A5F</span>
+            <input type="color" id="colorPicker" value="#8b5cf6">
+            <span class="text-xs font-mono text-slate-300" id="colorHex">#8B5CF6</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2 text-xs text-slate-400">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="gridToggle" class="accent-blue-400">
+              <span>Tampilkan grid</span>
+            </label>
+            <label class="ml-auto flex items-center gap-2">
+              <span class="text-xs text-slate-500">Ukuran</span>
+              <input id="gridSizeInput" type="number" min="8" max="200" value="25" class="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-xs text-slate-200 outline-none">
+            </label>
           </div>
         </div>
 

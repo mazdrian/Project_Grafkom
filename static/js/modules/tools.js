@@ -115,7 +115,36 @@ export function setupMouseEvents() {
   document.addEventListener('keydown', onKeyDown);
 }
 
+
+// Panning: middle mouse drag to move viewport
+function startPan(e) {
+  e.preventDefault();
+  state.panning = true;
+  state.panStartMouse = [e.clientX, e.clientY];
+  state.panStartOffset = [state.panX, state.panY];
+}
+
+function updatePan(e) {
+  if (!state.panning) return;
+  const dx = e.clientX - state.panStartMouse[0];
+  const dy = e.clientY - state.panStartMouse[1];
+  state.panX = state.panStartOffset[0] + dx;
+  state.panY = state.panStartOffset[1] + dy;
+  // redraw canvases
+  redrawAll();
+}
+
+function endPan(e) {
+  if (!state.panning) return;
+  state.panning = false;
+}
+
 function onMouseMove(e) {
+  // if panning, update pan and skip drawing previews
+  if (state.panning) {
+    updatePan(e);
+    return;
+  }
   const [x, y] = getXY(e);
   const coord = document.getElementById('statusCoord');
   if (coord) coord.textContent = `x: ${x}  y: ${y}`;
@@ -132,6 +161,9 @@ function onMouseMove(e) {
 }
 
 async function onMouseDown(e) {
+  // middle button => start panning
+  if (e.button === 1) { startPan(e); return; }
+
   const [x, y] = getXY(e);
   if (state.tool === 'polygon') { addPolyPoint(x, y); return; }
   if (state.tool === 'flood')   { await doFloodFill(x, y); return; }
@@ -143,6 +175,9 @@ async function onMouseDown(e) {
 }
 
 async function onMouseUp(e) {
+  // middle button up => end panning
+  if (e.button === 1) { endPan(e); return; }
+
   if (!state.drawing) return;
   state.drawing = false;
   clearOverlay();
@@ -162,6 +197,8 @@ function onMouseLeave() {
   const coord = document.getElementById('statusCoord');
   if (coord) coord.textContent = 'x: —  y: —';
   if (state.drawing && state.tool !== 'polygon') clearOverlay();
+  // stop panning when leaving canvas
+  if (state.panning) state.panning = false;
 }
 
 function onKeyDown(e) {
